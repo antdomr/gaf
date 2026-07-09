@@ -2,164 +2,212 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grupo Autofin México · Gely / Toño Mapeo</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root {
-      --bg: #0d1117;
-      --panel: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --alta: #ff6b6b;
-      --media: #f0b429;
-      --baja: #58a6ff;
-      --accent: #3fb950;
-      --heat-high: #ff4444;
-      --heat-mid: #ffaa00;
-      --heat-low: #4488ff;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
-    header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--panel); }
-    header h1 { font-size: 1.3rem; font-weight: 600; }
-    header p { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
-    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.65rem; padding: 1rem 1.5rem; background: var(--panel); border-bottom: 1px solid var(--border); }
-    .card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.85rem; }
-    .card .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-    .card .value { font-size: 1.25rem; font-weight: 700; margin-top: 0.1rem; }
-    .card .value.alta { color: var(--alta); }
-    .card .value.media { color: var(--media); }
-    .card .value.baja { color: var(--baja); }
-    .card .value.accent { color: var(--accent); }
-    .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--bg); border-bottom: 1px solid var(--border); align-items: center; }
-    .controls label { font-size: 0.78rem; color: var(--muted); margin-right: 0.25rem; }
-    .controls select, .controls button {
-      background: var(--panel); border: 1px solid var(--border); color: var(--text);
-      padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.78rem; cursor: pointer;
-    }
-    .controls button.active { border-color: var(--accent); color: var(--accent); }
-    .controls button:hover { border-color: var(--muted); }
-    .layout { display: grid; grid-template-columns: 1fr 320px; min-height: 560px; }
-    #map { height: 560px; width: 100%; background: #1a1a2e; }
-    .sidebar { background: var(--panel); border-left: 1px solid var(--border); padding: 1rem; overflow-y: auto; max-height: 560px; font-size: 0.8rem; }
-    .sidebar h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 1rem 0 0.5rem; }
-    .sidebar h3:first-child { margin-top: 0; }
-    .hub-block { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.55rem 0.65rem; margin-bottom: 0.5rem; background: var(--bg); }
-    .hub-block strong { display: block; font-size: 0.78rem; margin-bottom: 0.2rem; }
-    .hub-block span { color: var(--muted); font-size: 0.72rem; }
-    .legend-item { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.35rem; font-size: 0.78rem; }
-    .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-    .dot.i3 { background: var(--alta); box-shadow: 0 0 6px var(--alta); }
-    .dot.i2 { background: var(--media); box-shadow: 0 0 6px var(--media); }
-    .dot.i1 { background: var(--baja); box-shadow: 0 0 6px var(--baja); }
-    .table-wrap { padding: 1.25rem 1.5rem 2rem; overflow-x: auto; }
-    .table-wrap h2 { font-size: 0.95rem; margin-bottom: 0.75rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    th, td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.04em; position: sticky; top: 0; background: var(--bg); }
-    tr:hover td { background: rgba(88,166,255,0.06); }
-    .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; }
-    .badge.Alta { background: rgba(255,107,107,0.2); color: var(--alta); }
-    .badge.Media { background: rgba(240,180,41,0.2); color: var(--media); }
-    .badge.Baja { background: rgba(88,166,255,0.2); color: var(--baja); }
-    .int-badge { font-weight: 700; }
-    .int-3 { color: var(--alta); }
-    .int-2 { color: var(--media); }
-    .int-1 { color: var(--baja); }
-    a { color: #58a6ff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .notes { padding: 0 1.5rem 2rem; font-size: 0.75rem; color: var(--muted); }
-    .notes ul { margin-top: 0.4rem; padding-left: 1.2rem; }
-    .leaflet-popup-content-wrapper { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
-    .leaflet-popup-tip { background: var(--panel); }
-    .popup-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
-    .popup-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; }
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { max-height: none; border-left: none; border-top: 1px solid var(--border); }
-      #map { height: 420px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grupo Autofin - Priorización Comercial | Gely + Toño</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root {
+  --bg: #0a0e14; --panel: #121820; --card: #161d27; --border: #2a3441;
+  --text: #e8edf4; --muted: #8b9cb3;
+  --alta: #ff5c33; --alta-bg: rgba(255,92,51,0.12);
+  --media: #f0b429; --media-bg: rgba(240,180,41,0.12);
+  --baja: #5b8def; --baja-bg: rgba(91,141,239,0.12);
+  --accent: #3dd68c; --shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; }
+header { padding: 2rem 1.5rem 1.25rem; background: linear-gradient(180deg, #121820 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); }
+header h1 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 700; }
+header .sub { color: var(--muted); font-size: 0.92rem; margin-top: 0.5rem; max-width: 760px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; padding: 1.25rem 1.5rem; background: var(--panel); border-bottom: 1px solid var(--border); }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; }
+.stat .lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.stat .val { font-size: 1.5rem; font-weight: 700; margin-top: 0.15rem; }
+.stat .val.alta { color: var(--alta); } .stat .val.media { color: var(--media); }
+.stat .val.baja { color: var(--baja); } .stat .val.accent { color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+.controls label { font-size: 0.78rem; color: var(--muted); }
+.controls select, .controls input, .controls button {
+  background: var(--panel); border: 1px solid var(--border); color: var(--text);
+  padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.82rem;
+}
+.controls button { cursor: pointer; } .controls button.active { border-color: var(--accent); color: var(--accent); }
+.controls button:hover { border-color: var(--muted); }
+.controls input { min-width: 180px; flex: 1; max-width: 280px; }
+.map-section { padding: 0; border-bottom: 1px solid var(--border); }
+.map-section-header { padding: 1.25rem 1.5rem 0.75rem; }
+.map-section-header h2 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+.map-section-header h2::before { content: ""; width: 4px; height: 1.1em; background: var(--accent); border-radius: 2px; }
+.map-section-header p { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+.map-layout { display: grid; grid-template-columns: 1fr 300px; min-height: 520px; }
+#map { height: 520px; width: 100%; background: #1a1a2e; z-index: 1; }
+.map-sidebar { background: var(--panel); border-left: 1px solid var(--border); padding: 1rem; overflow-y: auto; max-height: 520px; font-size: 0.78rem; }
+.map-sidebar h3 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 1rem 0 0.5rem; }
+.map-sidebar h3:first-child { margin-top: 0; }
+.legend-item { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.35rem; }
+.dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.dot.alta { background: var(--alta); box-shadow: 0 0 6px var(--alta); }
+.dot.media { background: var(--media); box-shadow: 0 0 6px var(--media); }
+.dot.baja { background: var(--baja); box-shadow: 0 0 6px var(--baja); }
+.hub-block { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.55rem 0.65rem; margin-bottom: 0.5rem; background: var(--card); }
+.hub-block strong { display: block; font-size: 0.76rem; margin-bottom: 0.2rem; }
+.hub-block span { color: var(--muted); font-size: 0.7rem; }
+section { padding: 1.5rem; }
+section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+section h2::before { content: ""; width: 4px; height: 1.1em; background: var(--accent); border-radius: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.85rem; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; transition: transform 0.15s, box-shadow 0.15s; border-left: 4px solid var(--baja); }
+.card.alta { border-left-color: var(--alta); background: linear-gradient(135deg, var(--alta-bg), var(--card)); }
+.card.media { border-left-color: var(--media); background: linear-gradient(135deg, var(--media-bg), var(--card)); }
+.card.baja { border-left-color: var(--baja); background: linear-gradient(135deg, var(--baja-bg), var(--card)); }
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
+.card-head h3 { font-size: 0.88rem; font-weight: 600; line-height: 1.3; }
+.score-badge { font-size: 1.1rem; font-weight: 800; flex-shrink: 0; padding: 0.15rem 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.06); }
+.card.alta .score-badge { color: var(--alta); } .card.media .score-badge { color: var(--media); } .card.baja .score-badge { color: var(--baja); }
+.meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.35rem; }
+.meta strong { color: var(--text); font-weight: 500; }
+.badge { display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.15rem 0.45rem; border-radius: 4px; margin-right: 0.35rem; }
+.badge.alta { background: var(--alta-bg); color: var(--alta); }
+.badge.media { background: var(--media-bg); color: var(--media); }
+.badge.baja { background: var(--baja-bg); color: var(--baja); }
+.caso { font-size: 0.72rem; color: var(--muted); margin: 0.5rem 0; line-height: 1.45; }
+.btn-maps { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; padding: 0.4rem 0.75rem; background: rgba(61,214,140,0.12); color: var(--accent); border: 1px solid rgba(61,214,140,0.3); border-radius: 8px; font-size: 0.75rem; font-weight: 600; text-decoration: none; }
+.btn-maps:hover { background: rgba(61,214,140,0.22); }
+.top10-list { display: grid; gap: 0.5rem; }
+.top10-item { display: grid; grid-template-columns: 2rem 1fr auto auto; gap: 0.75rem; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; }
+.top10-item .rank { font-size: 1.2rem; font-weight: 800; color: var(--muted); }
+.top10-item .name { font-weight: 600; font-size: 0.88rem; }
+.top10-item .brand { font-size: 0.75rem; color: var(--muted); }
+.rutas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+.ruta-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+.ruta-card h4 { font-size: 0.82rem; margin-bottom: 0.35rem; }
+.ruta-card p { font-size: 0.72rem; color: var(--muted); }
+.insights { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.65rem; }
+.insight { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 0.9rem; font-size: 0.8rem; border-left: 3px solid var(--accent); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+th, td { padding: 0.55rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.04em; position: sticky; top: 0; background: var(--bg); }
+tr:hover td { background: rgba(91,141,239,0.05); }
+footer { padding: 1.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--border); }
+.leaflet-popup-content-wrapper { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.leaflet-popup-tip { background: var(--panel); }
+.popup-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+.popup-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; }
+@media (max-width: 900px) {
+  .map-layout { grid-template-columns: 1fr; }
+  .map-sidebar { max-height: none; border-left: none; border-top: 1px solid var(--border); }
+  #map { height: 400px; }
+}
+@media (max-width: 600px) {
+  .top10-item { grid-template-columns: 2rem 1fr; }
+  .top10-item .score-badge, .top10-item .badge { grid-column: 2; }
+}
+</style>
 </head>
 <body>
 
 <header>
-  <h1>Grupo Autofin México · Unidad Automotriz - Gely / Toño Mapeo</h1>
-  <p>57 unidades · Intensidad 1–3 (Baja/Media/Alta) · WhatsApp Automatizado + Agente Telefónico IA · Fuente: PDF Grupo Autofin</p>
+  <h1>Grupo Autofin - Priorización Comercial | Gely + Toño</h1>
+  <p class="sub">Priorización de agencias para WhatsApp Automatizado y Agente Telefónico de IA · Mapa GEOINT + análisis comercial · Directorio 2025</p>
 </header>
 
-<div class="summary">
-  <div class="card"><div class="label">Total unidades</div><div class="value accent" id="total">57</div></div>
-  <div class="card"><div class="label">Intensidad 3 (Alta)</div><div class="value alta" id="i3">—</div></div>
-  <div class="card"><div class="label">Intensidad 2 (Media)</div><div class="value media" id="i2">—</div></div>
-  <div class="card"><div class="label">Intensidad 1 (Baja)</div><div class="value baja" id="i1">—</div></div>
-  <div class="card"><div class="label">Grupos</div><div class="value" style="font-size:1rem;">15</div></div>
-  <div class="card"><div class="label">Hub principal</div><div class="value" style="font-size:0.82rem;">Div. Norte 1917</div></div>
+<div class="stats">
+  <div class="stat"><div class="lbl">Total agencias</div><div class="val accent">57</div></div>
+  <div class="stat"><div class="lbl">Relevancia ALTA</div><div class="val alta" id="s-alta">20</div></div>
+  <div class="stat"><div class="lbl">Relevancia MEDIA</div><div class="val media" id="s-media">31</div></div>
+  <div class="stat"><div class="lbl">Relevancia BAJA</div><div class="val baja" id="s-baja">6</div></div>
+  <div class="stat"><div class="lbl">Visibles en mapa</div><div class="val accent" id="s-visible">57</div></div>
+  <div class="stat"><div class="lbl">Hub principal</div><div class="val" style="font-size:0.82rem;">Div. Norte 1917</div></div>
 </div>
 
 <div class="controls">
-  <label>Filtrar:</label>
-  <select id="filter-rank"><option value="">Todos los RANK</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select>
-  <select id="filter-grupo"><option value="">Todos los grupos</option></select>
-  <select id="filter-int"><option value="">Todas intensidades</option><option value="3">Intensidad 3</option><option value="2">Intensidad 2</option><option value="1">Intensidad 1</option></select>
+  <label>Relevancia:</label>
+  <select id="f-rel"><option value="">Todas</option><option value="ALTA">ALTA</option><option value="MEDIA">MEDIA</option><option value="BAJA">BAJA</option></select>
+  <label>Marca:</label>
+  <select id="f-marca"><option value="">Todas</option></select>
+  <label>Estado:</label>
+  <select id="f-estado"><option value="">Todos</option></select>
+  <input type="search" id="f-search" placeholder="Buscar agencia...">
   <button id="btn-heat" class="active">Heat layer</button>
   <button id="btn-markers" class="active">Marcadores</button>
   <button id="btn-reset">Reset vista</button>
 </div>
 
-<div class="layout">
-  <div id="map"></div>
-  <aside class="sidebar">
-    <h3>Leyenda intensidad</h3>
-    <div class="legend-item"><span class="dot i3"></span> Intensidad 3 — RANK Alta (26 u.)</div>
-    <div class="legend-item"><span class="dot i2"></span> Intensidad 2 — RANK Media (24 u.)</div>
-    <div class="legend-item"><span class="dot i1"></span> Intensidad 1 — RANK Baja (7 u.)</div>
-
-    <h3>Hubs GEOINT críticos</h3>
-    <div id="hubs-list"></div>
-
-    <h3>Unidades visibles</h3>
-    <div id="visible-count" style="color:var(--muted);font-size:0.78rem;">—</div>
-    <div id="unit-list" style="margin-top:0.5rem;max-height:200px;overflow-y:auto;"></div>
-  </aside>
+<div class="map-section">
+  <div class="map-section-header">
+    <h2>Mapa GEOINT — Priorización territorial</h2>
+    <p>Heat map + marcadores por relevancia comercial. Click en pin para detalle. Rojo/naranja = ALTA · Dorado = MEDIA · Azul = BAJA.</p>
+  </div>
+  <div class="map-layout">
+    <div id="map"></div>
+    <aside class="map-sidebar">
+      <h3>Leyenda</h3>
+      <div class="legend-item"><span class="dot alta"></span> ALTA — score ≥ 78 (20 ag.)</div>
+      <div class="legend-item"><span class="dot media"></span> MEDIA — score 62–77 (31 ag.)</div>
+      <div class="legend-item"><span class="dot baja"></span> BAJA — score &lt; 62 (6 ag.)</div>
+      <h3>Hubs GEOINT críticos</h3>
+      <div id="hubs-list"></div>
+      <h3>Agencias visibles</h3>
+      <div id="visible-count" style="color:var(--muted);font-size:0.76rem;">—</div>
+      <div id="unit-list" style="margin-top:0.5rem;max-height:180px;overflow-y:auto;"></div>
+    </aside>
+  </div>
 </div>
 
-<div class="table-wrap">
-  <h2>Tabla completa — 57 unidades</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th><th>Unidad</th><th>Grupo</th><th>Marca</th><th>Ciudad</th>
-        <th>RANK</th><th>Int.</th><th>Solución</th><th>Maps</th>
-      </tr>
-    </thead>
-    <tbody id="table-body"></tbody>
-  </table>
-</div>
+<section id="sec-top10">
+  <h2>Top 10 agencias para atacar primero</h2>
+  <div class="top10-list" id="top10"></div>
+</section>
 
-<div class="notes">
-  <strong>Notas</strong>
-  <ul>
-    <li>Coordenadas aproximadas vía OSM/Nominatim + hubs verificados — validar pin antes de visitar.</li>
-    <li>Unidades con misma coordenada comparten sede física (ej. División del Norte 1917, Río Mayo 1105).</li>
-    <li>Intensidad heat map: Alta=3, Media=2, Baja=1 según análisis comercial del PDF.</li>
-    <li>PDF fuente: Grupo Autofin México | Unidad Automotriz (grupoautofin.com).</li>
-  </ul>
-</div>
+<section id="sec-cards">
+  <h2>Mapa de priorización — Cards por agencia</h2>
+  <div class="grid" id="cards"></div>
+</section>
+
+<section id="sec-rutas">
+  <h2>Rutas presenciales sugeridas</h2>
+  <div class="rutas-grid" id="rutas"></div>
+</section>
+
+<section id="sec-insights">
+  <h2>Insights ejecutivos</h2>
+  <div class="insights" id="insights"></div>
+</section>
+
+<section id="sec-table">
+  <h2>Tabla completa de ranking</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Agencia</th><th>Marca</th><th>Estado</th><th>Score</th><th>Relevancia</th><th>Caso de uso</th><th>Maps</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Análisis: PDF DIRECTORIO AGENCIAS 2025 · Grupo Autofin · Unidad Automotriz.
+  Coordenadas GEOINT aproximadas — validar antes de visitar. Setup $49,800 MXN + $35,000 MXN/mes por solución.
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/python-visualization/folium@main/folium/templates/leaflet_heat.min.js"></script>
 <script>
-const UNITS = [{"id": 1, "nombre": "CITY STORE CRESTA", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Eje 10-A Sur 32, Col. La Otra Banda, CDMX.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3012, "lon": -99.0945, "maps": "https://www.google.com/maps/search/?api=1&query=CITY+STORE+CRESTA+Eje+10-A+Sur+32%2C+Col.+La+Otra+Banda%2C+CDMX.", "hub": ""}, {"id": 2, "nombre": "CRESTA ACAPULCO", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Rubén Figueroa 714-A, Fracc. Farallón, Acapulco, Gro.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Acapulco", "lat": 16.8538, "lon": -99.9125, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+ACAPULCO+Rub%C3%A9n+Figueroa+714-A%2C+Fracc.+Farall%C3%B3n%2C+Acapulco%2C+Gro.", "hub": "Acapulco Farallón (714/714-A)"}, {"id": 3, "nombre": "CRESTA CUAUTLA", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Reforma 999, Cuautlixco, Cuautla, Mor.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Cuautla", "lat": 18.8123, "lon": -98.9548, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+CUAUTLA+Reforma+999%2C+Cuautlixco%2C+Cuautla%2C+Mor.", "hub": ""}, {"id": 4, "nombre": "CRESTA CUERNAVACA", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Emiliano Zapata 600, Tlaltenango, Cuernavaca, Mor.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Cuernavaca", "lat": 18.9231, "lon": -99.2306, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+CUERNAVACA+Emiliano+Zapata+600%2C+Tlaltenango%2C+Cuernavaca%2C+Mor.", "hub": ""}, {"id": 5, "nombre": "CRESTA DEL VALLE SUC. INSURGENTES", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Insurgentes Sur 1235, Extremadura Insurgentes, CDMX.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3905, "lon": -99.1785, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+DEL+VALLE+SUC.+INSURGENTES+Insurgentes+Sur+1235%2C+Extremadura+Insurgentes%2C+CDMX.", "hub": "Cluster Insurgentes Sur (CDMX)"}, {"id": 6, "nombre": "CRESTA IZTAPALAPA", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Rojo Gómez 472, Ind. Iztapalapa, CDMX.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3589, "lon": -99.0621, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+IZTAPALAPA+Rojo+G%C3%B3mez+472%2C+Ind.+Iztapalapa%2C+CDMX.", "hub": ""}, {"id": 7, "nombre": "CRESTA NARVARTE", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Cuauhtémoc 548, Narvarte Poniente, CDMX,", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3956, "lon": -99.1578, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+NARVARTE+Cuauht%C3%A9moc+548%2C+Narvarte+Poniente%2C+CDMX%2C", "hub": ""}, {"id": 8, "nombre": "CRESTA ZACATEPEC", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "Entronque Galeana Zacatepec s/n, Galeana, Zacatepec, Morelos.", "rank": "Baja", "intensidad": 1, "solucion": "Ambas", "ciudad": "Zacatepec", "lat": 18.8078, "lon": -99.5876, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+ZACATEPEC+Entronque+Galeana+Zacatepec+s%2Fn%2C+Galeana%2C+Zacatepec%2C+Morelos.", "hub": ""}, {"id": 9, "nombre": "CRESTA DEL VALLE", "grupo": "Grupo Cresta", "marca": "Volkswagen", "dir": "División del Norte 1917, Residencial Emperadores, CDMX.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3812, "lon": -99.1478, "maps": "https://www.google.com/maps/search/?api=1&query=CRESTA+DEL+VALLE+Divisi%C3%B3n+del+Norte+1917%2C+Residencial+Emperadores%2C+CDMX.", "hub": "Hub División del Norte 1917 (CDMX)"}, {"id": 10, "nombre": "FURIA ACAPULCO", "grupo": "Grupo Furia", "marca": "SEAT", "dir": "Rubén Figueroa 714, Fracc. Farallón, Acapulco, Gro.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Acapulco", "lat": 16.8538, "lon": -99.9125, "maps": "https://www.google.com/maps/search/?api=1&query=FURIA+ACAPULCO+Rub%C3%A9n+Figueroa+714%2C+Fracc.+Farall%C3%B3n%2C+Acapulco%2C+Gro.", "hub": "Acapulco Farallón (714/714-A)"}, {"id": 11, "nombre": "FURIA MÉXICO", "grupo": "Grupo Furia", "marca": "SEAT", "dir": "División del Norte 1917, Res. Emperadores, CDMX.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3812, "lon": -99.1478, "maps": "https://www.google.com/maps/search/?api=1&query=FURIA+M%C3%89XICO+Divisi%C3%B3n+del+Norte+1917%2C+Res.+Emperadores%2C+CDMX.", "hub": "Hub División del Norte 1917 (CDMX)"}, {"id": 12, "nombre": "FURIA MONTERREY", "grupo": "Grupo Furia", "marca": "SEAT", "dir": "Lázaro Cárdenas 2270, Valle Oriente, San Pedro Garza García, N.L.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Monterrey", "lat": 25.6595, "lon": -100.3452, "maps": "https://www.google.com/maps/search/?api=1&query=FURIA+MONTERREY+L%C3%A1zaro+C%C3%A1rdenas+2270%2C+Valle+Oriente%2C+San+Pedro+Garza+Garc%C3%ADa%2C+N.L.", "hub": "Valle Oriente Monterrey"}, {"id": 13, "nombre": "CUPRA CITY GARAGE MÉXICO", "grupo": "Grupo Furia", "marca": "CUPRA", "dir": "Durango 169, Roma Norte, Cuauhtémoc, Ciudad de México.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.4198, "lon": -99.1672, "maps": "https://www.google.com/maps/search/?api=1&query=CUPRA+CITY+GARAGE+M%C3%89XICO+Durango+169%2C+Roma+Norte%2C+Cuauht%C3%A9moc%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 14, "nombre": "AUDI CENTER ACAPULCO", "grupo": "Grupo Clase", "marca": "Audi", "dir": "Rubén Figueroa 714-A, Fracc. Farallón, Acapulco, Gro", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Acapulco", "lat": 16.8538, "lon": -99.9125, "maps": "https://www.google.com/maps/search/?api=1&query=AUDI+CENTER+ACAPULCO+Rub%C3%A9n+Figueroa+714-A%2C+Fracc.+Farall%C3%B3n%2C+Acapulco%2C+Gro", "hub": "Acapulco Farallón (714/714-A)"}, {"id": 15, "nombre": "AUDI CENTER MONTERREY", "grupo": "Grupo Clase", "marca": "Audi", "dir": "Lázaro Cárdenas 2268, Valle Ote., San Pedro Garza García, NL.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Monterrey", "lat": 25.6595, "lon": -100.3452, "maps": "https://www.google.com/maps/search/?api=1&query=AUDI+CENTER+MONTERREY+L%C3%A1zaro+C%C3%A1rdenas+2268%2C+Valle+Ote.%2C+San+Pedro+Garza+Garc%C3%ADa%2C+NL.", "hub": "Valle Oriente Monterrey"}, {"id": 16, "nombre": "SERVICE CENTER MONTERREY", "grupo": "Grupo Clase", "marca": "Audi", "dir": "Alfonso Reyes 3931 Sur, La República, Monterrey, NL.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Monterrey", "lat": 25.6289, "lon": -100.2887, "maps": "https://www.google.com/maps/search/?api=1&query=SERVICE+CENTER+MONTERREY+Alfonso+Reyes+3931+Sur%2C+La+Rep%C3%BAblica%2C+Monterrey%2C+NL.", "hub": ""}, {"id": 17, "nombre": "IMPERIO ABASTO", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Eje 6 Sur Trabajadoras Sociales Mz. 4, Lt. 48, San Pedro Iztapalapa, Ciudad de México", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3789, "lon": -99.0898, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+ABASTO+Eje+6+Sur+Trabajadoras+Sociales+Mz.+4%2C+Lt.+48%2C+San+Pedro+Iztapalapa%2C+Ciudad+de+M%C3%A9xico", "hub": ""}, {"id": 18, "nombre": "IMPERIO ORIENTE", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Ignacio Zaragoza 1927, Unid. Hab. Cabeza de Juárez, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3856, "lon": -99.0345, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+ORIENTE+Ignacio+Zaragoza+1927%2C+Unid.+Hab.+Cabeza+de+Ju%C3%A1rez%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 19, "nombre": "IMPERIO COAPA", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Calzada del Hueso 661, Ex Hacienda Coapa, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3012, "lon": -99.1278, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+COAPA+Calzada+del+Hueso+661%2C+Ex+Hacienda+Coapa%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 20, "nombre": "IMPERIO IZTAPALAPA", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Ermita Iztapalapa 848, Minerva, Iztapalapa, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3523, "lon": -99.0456, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+IZTAPALAPA+Ermita+Iztapalapa+848%2C+Minerva%2C+Iztapalapa%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 21, "nombre": "IMPERIO SUR", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Prol. División del Norte 5581, Barrio de San Marcos, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.2978, "lon": -99.1345, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+SUR+Prol.+Divisi%C3%B3n+del+Norte+5581%2C+Barrio+de+San+Marcos%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 22, "nombre": "IMPERIO XOCHIMILCO", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Prol. División del Norte 5217, Potrero de San Bernardino, Xochimilco, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.2645, "lon": -99.1123, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+XOCHIMILCO+Prol.+Divisi%C3%B3n+del+Norte+5217%2C+Potrero+de+San+Bernardino%2C+Xochimilco%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 23, "nombre": "IMPERIO TLÁHUAC", "grupo": "Grupo Imperio", "marca": "Nissan", "dir": "Tláhuac 5392, Los Olivos, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.2789, "lon": -99.0234, "maps": "https://www.google.com/maps/search/?api=1&query=IMPERIO+TL%C3%81HUAC+Tl%C3%A1huac+5392%2C+Los+Olivos%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 24, "nombre": "INFINITI POLANCO", "grupo": "Grupo Imperial", "marca": "Infiniti", "dir": "Mariano Escobedo 476, Nueva Anzures, Miguel Hidalgo, Ciudad de México.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.4278, "lon": -99.1789, "maps": "https://www.google.com/maps/search/?api=1&query=INFINITI+POLANCO+Mariano+Escobedo+476%2C+Nueva+Anzures%2C+Miguel+Hidalgo%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 25, "nombre": "DINASTÍA OAXACA", "grupo": "Grupo Dinastía", "marca": "Ford", "dir": "Universidad 162, Ex Hacienda Candiani, Oaxaca, Oax.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Oaxaca", "lat": 17.0645, "lon": -96.7234, "maps": "https://www.google.com/maps/search/?api=1&query=DINAST%C3%8DA+OAXACA+Universidad+162%2C+Ex+Hacienda+Candiani%2C+Oaxaca%2C+Oax.", "hub": ""}, {"id": 26, "nombre": "DINASTÍA ISTMO", "grupo": "Grupo Dinastía", "marca": "Ford", "dir": "Carretera Internacional 20, Barrio Santa María, Tehuantepec, Oaxaca.", "rank": "Baja", "intensidad": 1, "solucion": "Agente Telefónico de IA", "ciudad": "Tehuantepec", "lat": 16.3267, "lon": -95.2345, "maps": "https://www.google.com/maps/search/?api=1&query=DINAST%C3%8DA+ISTMO+Carretera+Internacional+20%2C+Barrio+Santa+Mar%C3%ADa%2C+Tehuantepec%2C+Oaxaca.", "hub": ""}, {"id": 27, "nombre": "MAZDA PASIÓN BUENAVISTA", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "Insurgentes Norte 260, Santa María la Ribera, Cuauhtémoc, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.4523, "lon": -99.1623, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+BUENAVISTA+Insurgentes+Norte+260%2C+Santa+Mar%C3%ADa+la+Ribera%2C+Cuauht%C3%A9moc%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 28, "nombre": "MAZDA PASIÓN DEL VALLE", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "Cuauhtémoc 1372, Santa Cruz Atoyac, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3989, "lon": -99.1567, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+DEL+VALLE+Cuauht%C3%A9moc+1372%2C+Santa+Cruz+Atoyac%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 29, "nombre": "MAZDA PASIÓN DEL VALLE SUC. UNIVERSIDAD", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "Universidad 1090, Xoco, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3856, "lon": -99.1678, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+DEL+VALLE+SUC.+UNIVERSIDAD+Universidad+1090%2C+Xoco%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 30, "nombre": "MAZDA PASIÓN INTERLOMAS", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "Magnocentro 1, San Fdo. La Herradura, Huixquilucan, Edo. de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Edomex", "lat": 19.3978, "lon": -99.2845, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+INTERLOMAS+Magnocentro+1%2C+San+Fdo.+La+Herradura%2C+Huixquilucan%2C+Edo.+de+M%C3%A9xico.", "hub": "Interlomas Magnocentro"}, {"id": 31, "nombre": "MAZDA PASIÓN INTERLOMAS SUC. POLANCO", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "Manuel Ávila Camacho 145, Chapultepec, Ciudad de México.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.4278, "lon": -99.1945, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+INTERLOMAS+SUC.+POLANCO+Manuel+%C3%81vila+Camacho+145%2C+Chapultepec%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 32, "nombre": "MAZDA PASIÓN PACHUCA", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "General Felipe Ángeles 831, ISSSTE, Pachuca de Soto, Hgo.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Pachuca", "lat": 20.1015, "lon": -98.7598, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+PASI%C3%93N+PACHUCA+General+Felipe+%C3%81ngeles+831%2C+ISSSTE%2C+Pachuca+de+Soto%2C+Hgo.", "hub": "Pachuca Felipe Ángeles 400/831"}, {"id": 33, "nombre": "MAZDA MARINA NACIONAL", "grupo": "Grupo Pasión", "marca": "Mazda", "dir": "GMarina Nacional 103, Loc. A, entre Lago Mayor y Lago Mask, Anáhuac, Ciudad de México", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.4456, "lon": -99.189, "maps": "https://www.google.com/maps/search/?api=1&query=MAZDA+MARINA+NACIONAL+GMarina+Nacional+103%2C+Loc.+A%2C+entre+Lago+Mayor+y+Lago+Mask%2C+An%C3%A1huac%2C+Ciudad+de+M%C3%A9xico", "hub": ""}, {"id": 34, "nombre": "BYD HERENCIA UNIVERSIDAD", "grupo": "Grupo Herencia", "marca": "BYD", "dir": "Universidad 601, Del Valle, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3845, "lon": -99.1712, "maps": "https://www.google.com/maps/search/?api=1&query=BYD+HERENCIA+UNIVERSIDAD+Universidad+601%2C+Del+Valle%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 35, "nombre": "ELEGANTES PACHUCA", "grupo": "Grupo Elegantes", "marca": "No determinado", "dir": "General Felipe Ángeles 400, Fracc. Pachoacan, Pachuca, Hgo.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Pachuca", "lat": 20.1015, "lon": -98.7598, "maps": "https://www.google.com/maps/search/?api=1&query=ELEGANTES+PACHUCA+General+Felipe+%C3%81ngeles+400%2C+Fracc.+Pachoacan%2C+Pachuca%2C+Hgo.", "hub": "Pachuca Felipe Ángeles 400/831"}, {"id": 36, "nombre": "EXCELENCIA NORTE CUAUTITLÁN", "grupo": "Grupo Excelencia", "marca": "Chevrolet", "dir": "Aut. México-Querétaro km 36.9, Cuautitlán Izcalli, Edo. de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Edomex", "lat": 19.6542, "lon": -99.1985, "maps": "https://www.google.com/maps/search/?api=1&query=EXCELENCIA+NORTE+CUAUTITL%C3%81N+Aut.+M%C3%A9xico-Quer%C3%A9taro+km+36.9%2C+Cuautitl%C3%A1n+Izcalli%2C+Edo.+de+M%C3%A9xico.", "hub": "Corredor México-Querétaro km 29.5–36.9"}, {"id": 37, "nombre": "EXCELENCIA PERINORTE", "grupo": "Grupo Excelencia", "marca": "Chevrolet", "dir": "Aut. México-Querétaro km 29.5, San Martín Tepetlixpan, Cuautitlán Izcalli, Edo. de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Edomex", "lat": 19.6128, "lon": -99.2156, "maps": "https://www.google.com/maps/search/?api=1&query=EXCELENCIA+PERINORTE+Aut.+M%C3%A9xico-Quer%C3%A9taro+km+29.5%2C+San+Mart%C3%ADn+Tepetlixpan%2C+Cuautitl%C3%A1n+Izcalli%2C+Edo.+de+M%C3%A9xico.", "hub": "Corredor México-Querétaro km 29.5–36.9"}, {"id": 38, "nombre": "EXCELENCIA HIDALGO", "grupo": "Grupo Excelencia", "marca": "Chevrolet", "dir": "Carr. Tula-Jorobas km 3, El Llano 1a Secc., Tula, Hgo.", "rank": "Baja", "intensidad": 1, "solucion": "Ambas", "ciudad": "Tula", "lat": 20.0534, "lon": -99.3456, "maps": "https://www.google.com/maps/search/?api=1&query=EXCELENCIA+HIDALGO+Carr.+Tula-Jorobas+km+3%2C+El+Llano+1a+Secc.%2C+Tula%2C+Hgo.", "hub": ""}, {"id": 39, "nombre": "EXCELENCIA ZUMPANGO", "grupo": "Grupo Excelencia", "marca": "Chevrolet", "dir": "Melchor Ocampo 151, Barrio de Santiago 1a. Sección, Zumpango, Edo. De México.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Zumpango", "lat": 19.7967, "lon": -99.1012, "maps": "https://www.google.com/maps/search/?api=1&query=EXCELENCIA+ZUMPANGO+Melchor+Ocampo+151%2C+Barrio+de+Santiago+1a.+Secci%C3%B3n%2C+Zumpango%2C+Edo.+De+M%C3%A9xico.", "hub": ""}, {"id": 40, "nombre": "INGENIO", "grupo": "Grupo Ingenio", "marca": "No determinado", "dir": "Ciencias 25, Aut. México-Querétaro km 36.9, Cuautitlán Izcalli, Edo. de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Edomex", "lat": 19.6542, "lon": -99.1985, "maps": "https://www.google.com/maps/search/?api=1&query=INGENIO+Ciencias+25%2C+Aut.+M%C3%A9xico-Quer%C3%A9taro+km+36.9%2C+Cuautitl%C3%A1n+Izcalli%2C+Edo.+de+M%C3%A9xico.", "hub": "Corredor México-Querétaro km 29.5–36.9"}, {"id": 41, "nombre": "RENAULT XALAPA", "grupo": "Grupo Lux", "marca": "Renault", "dir": "Lázaro Cárdenas 42, Badillo, Xalapa, Ver.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Xalapa", "lat": 19.5312, "lon": -96.9234, "maps": "https://www.google.com/maps/search/?api=1&query=RENAULT+XALAPA+L%C3%A1zaro+C%C3%A1rdenas+42%2C+Badillo%2C+Xalapa%2C+Ver.", "hub": ""}, {"id": 42, "nombre": "RENAULT VERACRUZ", "grupo": "Grupo Lux", "marca": "Renault", "dir": "Ejército Mexicano 2109, 1.º de Mayo Nte., Boca del Río, Ver.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Veracruz", "lat": 19.1234, "lon": -96.1123, "maps": "https://www.google.com/maps/search/?api=1&query=RENAULT+VERACRUZ+Ej%C3%A9rcito+Mexicano+2109%2C+1.%C2%BA+de+Mayo+Nte.%2C+Boca+del+R%C3%ADo%2C+Ver.", "hub": ""}, {"id": 43, "nombre": "RENAULT INTERLOMAS", "grupo": "Grupo Lux", "marca": "Renault", "dir": "Magnocentro San Fernando 1, La Herradura, Huixquilucan, Estado de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "Edomex", "lat": 19.3978, "lon": -99.2845, "maps": "https://www.google.com/maps/search/?api=1&query=RENAULT+INTERLOMAS+Magnocentro+San+Fernando+1%2C+La+Herradura%2C+Huixquilucan%2C+Estado+de+M%C3%A9xico.", "hub": "Interlomas Magnocentro"}, {"id": 44, "nombre": "MITSUBISHI PACHUCA", "grupo": "Grupo Samurái", "marca": "Mitsubishi", "dir": "General Felipe Ángeles 400, Fracc. Pachoacan, Pachuca, Hgo.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Pachuca", "lat": 20.1015, "lon": -98.7598, "maps": "https://www.google.com/maps/search/?api=1&query=MITSUBISHI+PACHUCA+General+Felipe+%C3%81ngeles+400%2C+Fracc.+Pachoacan%2C+Pachuca%2C+Hgo.", "hub": "Pachuca Felipe Ángeles 400/831"}, {"id": 45, "nombre": "PUNTO DE VENTA INSURGENTES", "grupo": "Grupo Samurái", "marca": "Mitsubishi", "dir": "Insurgentes Sur 1247, Extremadura Insurgentes, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "WhatsApp Automatizado", "ciudad": "CDMX", "lat": 19.3908, "lon": -99.1782, "maps": "https://www.google.com/maps/search/?api=1&query=PUNTO+DE+VENTA+INSURGENTES+Insurgentes+Sur+1247%2C+Extremadura+Insurgentes%2C+Ciudad+de+M%C3%A9xico.", "hub": "Cluster Insurgentes Sur (CDMX)"}, {"id": 46, "nombre": "KIA DEL VALLE", "grupo": "Grupo Trascendencia", "marca": "KIA", "dir": "Ángel Urraza 1311, Narvarte Poniente, Alc. Benito Juárez, Ciudad de México.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3945, "lon": -99.1589, "maps": "https://www.google.com/maps/search/?api=1&query=KIA+DEL+VALLE+%C3%81ngel+Urraza+1311%2C+Narvarte+Poniente%2C+Alc.+Benito+Ju%C3%A1rez%2C+Ciudad+de+M%C3%A9xico.", "hub": ""}, {"id": 47, "nombre": "KIA DIVISIÓN DEL NORTE", "grupo": "Grupo Trascendencia", "marca": "KIA", "dir": "Av. División del Norte 1917, Residencial Emperadores.", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3812, "lon": -99.1478, "maps": "https://www.google.com/maps/search/?api=1&query=KIA+DIVISI%C3%93N+DEL+NORTE+Av.+Divisi%C3%B3n+del+Norte+1917%2C+Residencial+Emperadores.", "hub": "Hub División del Norte 1917 (CDMX)"}, {"id": 48, "nombre": "KIA DIAMANTE", "grupo": "Grupo Trascendencia", "marca": "KIA", "dir": "Blvd. de las Naciones, esq. Paseo de los Manglares 405, Fraccionamiento Granjas del Marqués, Acapulco, Guerrero.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Acapulco", "lat": 16.8234, "lon": -99.8567, "maps": "https://www.google.com/maps/search/?api=1&query=KIA+DIAMANTE+Blvd.+de+las+Naciones%2C+esq.+Paseo+de+los+Manglares+405%2C+Fraccionamiento+Granjas+del+Marqu%C3%A9s%2C+Acapulco%2C+Guerrero.", "hub": ""}, {"id": 49, "nombre": "KIA GUERRERENSE", "grupo": "Grupo Trascendencia", "marca": "KIA", "dir": "Fraccionamiento Villas Vicente Guerrero, Chilpancingo de los Bravo, Guerrero.", "rank": "Baja", "intensidad": 1, "solucion": "Ambas", "ciudad": "Chilpancingo", "lat": 17.5512, "lon": -99.5012, "maps": "https://www.google.com/maps/search/?api=1&query=KIA+GUERRERENSE+Fraccionamiento+Villas+Vicente+Guerrero%2C+Chilpancingo+de+los+Bravo%2C+Guerrero.", "hub": ""}, {"id": 50, "nombre": "KIA PATRIOTISMO", "grupo": "Grupo Trascendencia", "marca": "KIA", "dir": "Patriotismo 587, Ciudad de los Deportes", "rank": "Alta", "intensidad": 3, "solucion": "Ambas", "ciudad": "CDMX", "lat": 19.3845, "lon": -99.1823, "maps": "https://www.google.com/maps/search/?api=1&query=KIA+PATRIOTISMO+Patriotismo+587%2C+Ciudad+de+los+Deportes", "hub": ""}, {"id": 51, "nombre": "BMW RÍO MAYO", "grupo": "Grupo Master", "marca": "BMW", "dir": "Río Mayo 1105, Vista Hermosa, Cuernavaca, Morelos.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Cuernavaca", "lat": 18.9234, "lon": -99.2008, "maps": "https://www.google.com/maps/search/?api=1&query=BMW+R%C3%8DO+MAYO+R%C3%ADo+Mayo+1105%2C+Vista+Hermosa%2C+Cuernavaca%2C+Morelos.", "hub": "Hub Río Mayo 1105 Cuernavaca"}, {"id": 52, "nombre": "BMW ACAPULCO", "grupo": "Grupo Master", "marca": "BMW", "dir": "Costera Miguel Alemán 2036, Farallón, Acapulco, Gro.", "rank": "Media", "intensidad": 2, "solucion": "Ambas", "ciudad": "Acapulco", "lat": 16.8612, "lon": -99.8891, "maps": "https://www.google.com/maps/search/?api=1&query=BMW+ACAPULCO+Costera+Miguel+Alem%C3%A1n+2036%2C+Farall%C3%B3n%2C+Acapulco%2C+Gro.", "hub": "Hub Costera 2036 Acapulco"}, {"id": 53, "nombre": "MINI RÍO MAYO", "grupo": "Grupo Master", "marca": "MINI", "dir": "Río Mayo 1105, Vista Hermosa, Cuernavaca, Morelos.", "rank": "Media", "intensidad": 2, "solucion": "Agente Telefónico de IA", "ciudad": "Cuernavaca", "lat": 18.9234, "lon": -99.2008, "maps": "https://www.google.com/maps/search/?api=1&query=MINI+R%C3%8DO+MAYO+R%C3%ADo+Mayo+1105%2C+Vista+Hermosa%2C+Cuernavaca%2C+Morelos.", "hub": "Hub Río Mayo 1105 Cuernavaca"}, {"id": 54, "nombre": "MINI ACAPULCO", "grupo": "Grupo Master", "marca": "MINI", "dir": "Costera Miguel Alemán 2036, Farallón, Acapulco, Gro.", "rank": "Media", "intensidad": 2, "solucion": "Agente Telefónico de IA", "ciudad": "Acapulco", "lat": 16.8612, "lon": -99.8891, "maps": "https://www.google.com/maps/search/?api=1&query=MINI+ACAPULCO+Costera+Miguel+Alem%C3%A1n+2036%2C+Farall%C3%B3n%2C+Acapulco%2C+Gro.", "hub": "Hub Costera 2036 Acapulco"}, {"id": 55, "nombre": "MOTORRAD RÍO MAYO", "grupo": "Grupo Master", "marca": "Motorrad", "dir": "Río Mayo 1105, Vista Hermosa, Cuernavaca, Morelos.", "rank": "Baja", "intensidad": 1, "solucion": "WhatsApp Automatizado", "ciudad": "Cuernavaca", "lat": 18.9234, "lon": -99.2008, "maps": "https://www.google.com/maps/search/?api=1&query=MOTORRAD+R%C3%8DO+MAYO+R%C3%ADo+Mayo+1105%2C+Vista+Hermosa%2C+Cuernavaca%2C+Morelos.", "hub": "Hub Río Mayo 1105 Cuernavaca"}, {"id": 56, "nombre": "MOTORRAD ACAPULCO", "grupo": "Grupo Master", "marca": "Motorrad", "dir": "Costera Miguel Alemán 2036, Farallón, Acapulco, Gro.", "rank": "Baja", "intensidad": 1, "solucion": "WhatsApp Automatizado", "ciudad": "Acapulco", "lat": 16.8612, "lon": -99.8891, "maps": "https://www.google.com/maps/search/?api=1&query=MOTORRAD+ACAPULCO+Costera+Miguel+Alem%C3%A1n+2036%2C+Farall%C3%B3n%2C+Acapulco%2C+Gro.", "hub": "Hub Costera 2036 Acapulco"}, {"id": 57, "nombre": "DUCATI CUERNAVACA", "grupo": "No determinado en PDF", "marca": "Ducati", "dir": "Av. Emiliano Zapata 709-A, Col. Bellavista, Cuernavaca, Morelos.", "rank": "Baja", "intensidad": 1, "solucion": "WhatsApp Automatizado", "ciudad": "Cuernavaca", "lat": 18.9189, "lon": -99.2289, "maps": "https://www.google.com/maps/search/?api=1&query=DUCATI+CUERNAVACA+Av.+Emiliano+Zapata+709-A%2C+Col.+Bellavista%2C+Cuernavaca%2C+Morelos.", "hub": ""}];
-const HUBS = {"Hub División del Norte 1917 (CDMX)": [9, 11, 47], "Cluster Insurgentes Sur (CDMX)": [5, 45], "Corredor México-Querétaro km 29.5–36.9": [36, 37, 40], "Acapulco Farallón (714/714-A)": [2, 10, 14], "Valle Oriente Monterrey": [12, 15], "Interlomas Magnocentro": [30, 43], "Pachuca Felipe Ángeles 400/831": [32, 35, 44], "Hub Río Mayo 1105 Cuernavaca": [51, 53, 55], "Hub Costera 2036 Acapulco": [52, 54, 56]};
+const AGENCIES = [{"id": 18, "nombre": "CRESTA DEL VALLE", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "División del Norte 1917, Residencial Emperadores, CDMX.", "tel": "(55) 5688-8969", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 86, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca volkswagen con operación en cdmx; ubicación en corredor automotriz o hub multimarca (score 84).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 1, "lat": 19.3812, "lon": -99.1478, "hub": "Hub División del Norte 1917 (CDMX)", "intensidad": 3}, {"id": 30, "nombre": "IMPERIO ABASTO", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Canal de Río Churubusco 1635, Central de Abasto, Iztapalapa, CDMX.", "tel": "(55) 1295-4645", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 2, "lat": 19.3789, "lon": -99.0898, "hub": "", "intensidad": 3}, {"id": 31, "nombre": "IMPERIO COAPA", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Calz. del Hueso 661, Tenorios, CDMX.", "tel": "(55) 5599-0880", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 3, "lat": 19.3012, "lon": -99.1278, "hub": "", "intensidad": 3}, {"id": 32, "nombre": "IMPERIO IZTAPALAPA", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Ermita Iztapalapa 848, Minerva, Iztapalapa, CDMX.", "tel": "(55) 5804-4400", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 4, "lat": 19.3523, "lon": -99.0456, "hub": "", "intensidad": 3}, {"id": 33, "nombre": "IMPERIO ORIENTE", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Ignacio Zaragoza 1927, Chinampac de Juárez, CDMX.", "tel": "(55) 5745-1380", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 5, "lat": 19.3856, "lon": -99.0345, "hub": "", "intensidad": 3}, {"id": 34, "nombre": "IMPERIO SUR", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Prol. División del Norte 5581, Barrio de San Marcos, CDMX.", "tel": "(55) 5641-1000", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 6, "lat": 19.2978, "lon": -99.1345, "hub": "", "intensidad": 3}, {"id": 35, "nombre": "IMPERIO TLÁHUAC", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Tláhuac 5392, Los Olivos, CDMX.", "tel": "(55) 5845-0180", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 7, "lat": 19.2789, "lon": -99.0234, "hub": "", "intensidad": 3}, {"id": 36, "nombre": "IMPERIO XOCHIMILCO", "marca": "Nissan", "grupo": "Grupo Imperio", "dir": "Prol. División del Norte 5217, Potrero de San Bernardino, Xochimilco, CDMX.", "tel": "(55) 5334-0490", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Postventa intensiva", "score": 86, "relevancia": "ALTA", "caso_uso": "Recuperación de llamadas no contestadas; Confirmación de citas de servicio; Seguimiento de leads digitales", "justificacion": "Marca nissan con operación en cdmx; red nissan de alto volumen con fuerte componente postventa (score 86).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 8, "lat": 19.2645, "lon": -99.1123, "hub": "", "intensidad": 3}, {"id": 50, "nombre": "KIA DIVISIÓN DEL NORTE", "marca": "KIA", "grupo": "Grupo Trascendencia", "dir": "División Del Norte 1917, Residencial Emperadores, CDMX.", "tel": "(55) 5605-0543", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 84, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca kia con operación en cdmx (score 81).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 9, "lat": 19.3812, "lon": -99.1478, "hub": "Hub División del Norte 1917 (CDMX)", "intensidad": 3}, {"id": 19, "nombre": "CRESTA DEL VALLE SUC. INSURGENTES", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Insurgentes Sur 1235, Extremadura Insurgentes, CDMX.", "tel": "(55) 5482-7690", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 83, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca volkswagen con operación en cdmx; ubicación en corredor automotriz o hub multimarca (score 83).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 10, "lat": 19.3905, "lon": -99.1785, "hub": "Cluster Insurgentes Sur (CDMX)", "intensidad": 3}, {"id": 1, "nombre": "EXCELENCIA CUAJIMALPA", "marca": "Chevrolet", "grupo": "Grupo Excelencia", "dir": "Carr. México-Toluca 5600, Lomas de Memetla, CDMX.", "tel": "(55) 5228-9905", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 83, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca chevrolet con operación en cdmx (score 83).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 11, "lat": 19.3185, "lon": -99.3012, "hub": "Corredor México-Toluca", "intensidad": 3}, {"id": 42, "nombre": "MAZDA PASIÓN DEL VALLE SUC. UNIVERSIDAD", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "Universidad 1090, Xoco, CDMX.", "tel": "(55) 5601-5501", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 82, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca mazda con operación en cdmx (score 80).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 12, "lat": 19.3856, "lon": -99.1678, "hub": "Cluster Del Valle Universidad", "intensidad": 3}, {"id": 20, "nombre": "CRESTA IZTAPALAPA", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Rojo Gómez 472, Ind. Iztapalapa, CDMX.", "tel": "(55) 5686-7399", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 81, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca volkswagen con operación en cdmx (score 81).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 13, "lat": 19.3589, "lon": -99.0621, "hub": "", "intensidad": 3}, {"id": 21, "nombre": "CRESTA NARVARTE", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Cuauhtémoc 548, Narvarte Poniente, CDMX.", "tel": "(55) 5634-9780", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 81, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca volkswagen con operación en cdmx (score 81).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 14, "lat": 19.3956, "lon": -99.1578, "hub": "", "intensidad": 3}, {"id": 2, "nombre": "EXCELENCIA NORTE", "marca": "Chevrolet", "grupo": "Grupo Excelencia", "dir": "Aut. México-Querétaro Km 36.9, Cuautitlán Izcalli, Edo. de Méx.", "tel": "(55) 5899-9904", "ciudad": "Cuautitlán Izcalli", "estado": "Estado de México", "segmento": "Volumen alto", "score": 80, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca chevrolet con operación en estado de méxico (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 15, "lat": 19.6542, "lon": -99.1985, "hub": "Corredor México-Querétaro km 29.5–36.9", "intensidad": 3}, {"id": 4, "nombre": "EXCELENCIA PERINORTE", "marca": "Chevrolet", "grupo": "Grupo Excelencia", "dir": "Aut. México-Querétaro Km 29.5, San Martín Tepetlixpan, Cuautitlán Izcalli, Edo. de Méx.", "tel": "(55) 5861-9730", "ciudad": "Cuautitlán Izcalli", "estado": "Estado de México", "segmento": "Volumen alto", "score": 80, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca chevrolet con operación en estado de méxico (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 16, "lat": 19.6128, "lon": -99.2156, "hub": "Corredor México-Querétaro km 29.5–36.9", "intensidad": 3}, {"id": 49, "nombre": "KIA DEL VALLE", "marca": "KIA", "grupo": "Grupo Trascendencia", "dir": "Ángel Urraza 1311, Del Valle, CDMX.", "tel": "(55) 5559-3936", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 80, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca kia con operación en cdmx (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 17, "lat": 19.3945, "lon": -99.1589, "hub": "", "intensidad": 3}, {"id": 41, "nombre": "MAZDA PASIÓN DEL VALLE", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "Cuauhtémoc 1372, Santa Cruz Atoyac, CDMX.", "tel": "(55) 5605-2255", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 80, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca mazda con operación en cdmx (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 18, "lat": 19.3989, "lon": -99.1567, "hub": "", "intensidad": 3}, {"id": 43, "nombre": "MAZDA PASIÓN INTERLOMAS", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "Magnocentro 1, San Fdo. La Herradura, Huixquilucan, Edo. de México.", "tel": "(55) 5245-9890", "ciudad": "Huixquilucan", "estado": "Estado de México", "segmento": "Volumen alto", "score": 80, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Ubicación en corredor automotriz o hub multimarca (score 77).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 19, "lat": 19.3978, "lon": -99.2845, "hub": "Interlomas Magnocentro", "intensidad": 3}, {"id": 40, "nombre": "MAZDA PASIÓN BUENAVISTA", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "Av. Insurgentes Nte. 260, Sta María la Ribera, Cuauhtémoc, CDMX.", "tel": "(55) 9549 0089", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 79, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca mazda con operación en cdmx; ubicación en corredor automotriz o hub multimarca (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 20, "lat": 19.4523, "lon": -99.1623, "hub": "", "intensidad": 3}, {"id": 29, "nombre": "SERVICE CENTER MONTERREY", "marca": "Audi", "grupo": "Grupo Clase", "dir": "Alfonso Reyes 3931 Sur, La República, Monterrey, Nuevo León.", "tel": "(81) 8387-6681 al 83", "ciudad": "Monterrey", "estado": "Nuevo León", "segmento": "Premium / lujo", "score": 79, "relevancia": "ALTA", "caso_uso": "Confirmación de citas de servicio; Atención postventa 24/7; Recordatorios de mantenimiento", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 76).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 21, "lat": 25.6289, "lon": -100.2887, "hub": "", "intensidad": 3}, {"id": 28, "nombre": "AUDI CENTER MONTERREY", "marca": "Audi", "grupo": "Grupo Clase", "dir": "Lázaro Cárdenas 2268, Valle Ote., San Pedro Garza García, Nuevo León.", "tel": "(81) 8152-6600 Ext. 6201", "ciudad": "San Pedro Garza García", "estado": "Nuevo León", "segmento": "Premium / lujo", "score": 78, "relevancia": "ALTA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 74).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 22, "lat": 25.6595, "lon": -100.3452, "hub": "", "intensidad": 3}, {"id": 53, "nombre": "LINCOLN INTERLOMAS", "marca": "Lincoln", "grupo": "Grupo Dinastía", "dir": "Magnocentro 1, San Fdo. La Herradura, Huixquilucan, Edo. de Méx.", "tel": "(55) 5950-0930", "ciudad": "Huixquilucan", "estado": "Estado de México", "nota_grupo": "Hipótesis: mismo hub Interlomas que Dinastía Ford", "segmento": "Premium / lujo", "score": 78, "relevancia": "ALTA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ubicación en corredor automotriz o hub multimarca; ticket alto justifica inversión en atención personalizada automatizada (score 76).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 23, "lat": 19.3978, "lon": -99.2845, "hub": "Interlomas Magnocentro", "intensidad": 3}, {"id": 44, "nombre": "MAZDA PASIÓN INTERLOMAS SUC. POLANCO", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "Blvd. Manuel Ávila Camacho 145, Polanco, Lomas de Chapultepec V Secc., CDMX.", "tel": "(55) 5280-1089", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 78, "relevancia": "ALTA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Marca mazda con operación en cdmx (score 78).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 24, "lat": 19.4278, "lon": -99.1945, "hub": "", "intensidad": 3}, {"id": 14, "nombre": "CITY STORE CRESTA", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Eje 10-A Sur 32, Col. La Otra Banda, CDMX.", "tel": "(55) 5688-8969", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Especializada / nicho", "score": 77, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Reactivación de prospectos; Agendamiento de pruebas de manejo", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 77).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 25, "lat": 19.3012, "lon": -99.0945, "hub": "", "intensidad": 2}, {"id": 54, "nombre": "DINASTÍA MÉXICO", "marca": "Ford", "grupo": "Grupo Dinastía", "dir": "Magnocentro 1, San Fdo. La Herradura, Huixquilucan, Edo. de México.", "tel": "(55) 5626-5600", "ciudad": "Huixquilucan", "estado": "Estado de México", "segmento": "Volumen alto", "score": 77, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Ubicación en corredor automotriz o hub multimarca (score 75).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 26, "lat": 19.3978, "lon": -99.2845, "hub": "Interlomas Magnocentro", "intensidad": 2}, {"id": 5, "nombre": "EXCELENCIA ZUMPANGO", "marca": "Chevrolet", "grupo": "Grupo Excelencia", "dir": "Melchor Ocampo 44, Barrio de Santiago 1a. Sección, Zumpango, Edo. de Méx.", "tel": "(591) 917-9659", "ciudad": "Zumpango", "estado": "Estado de México", "segmento": "Volumen alto", "score": 76, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 76).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 27, "lat": 19.7967, "lon": -99.1012, "hub": "", "intensidad": 2}, {"id": 47, "nombre": "INFINITI POLANCO", "marca": "Infiniti", "grupo": "Grupo Imperial", "dir": "Calz. Mariano Escobedo 476, Nueva Anzures, CDMX.", "tel": "(55) 5929-8383", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Premium / lujo", "score": 76, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 75).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 28, "lat": 19.4278, "lon": -99.1789, "hub": "", "intensidad": 2}, {"id": 25, "nombre": "FURIA MÉXICO", "marca": "SEAT", "grupo": "Grupo Furia", "dir": "División del Norte 1917, Res. Emperadores, CDMX.", "tel": "(55) 5601-6380", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 74, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Ubicación en corredor automotriz o hub multimarca (score 72).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 29, "lat": 19.3812, "lon": -99.1478, "hub": "Hub División del Norte 1917 (CDMX)", "intensidad": 2}, {"id": 46, "nombre": "INGENIO AUTOMOTRIZ", "marca": "GMC", "grupo": "Grupo Ingenio", "dir": "Ciencias 25, Aut. México-Querétaro Km 36.9, Cuautitlán Izcalli, Edo. de Méx.", "tel": "(55) 5872-2255", "ciudad": "Cuautitlán Izcalli", "estado": "Estado de México", "nota_marca": "Hipótesis: logo GMC en directorio visual", "segmento": "Volumen alto", "score": 74, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 72).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 30, "lat": 19.6542, "lon": -99.1985, "hub": "Corredor México-Querétaro km 29.5–36.9", "intensidad": 2}, {"id": 37, "nombre": "RENAULT INTERLOMAS", "marca": "Renault", "grupo": "Grupo Lux", "dir": "Magnocentro 1, San Fernando La Herradura, Huixquilucan, Edo. de Méx.", "tel": "[sin teléfono en PDF]", "ciudad": "Huixquilucan", "estado": "Estado de México", "segmento": "Volumen alto", "score": 74, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Ubicación en corredor automotriz o hub multimarca (score 71).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 31, "lat": 19.3978, "lon": -99.2845, "hub": "Interlomas Magnocentro", "intensidad": 2}, {"id": 27, "nombre": "AUDI CENTER ACAPULCO", "marca": "Audi", "grupo": "Grupo Clase", "dir": "Rubén Figueroa 714-A, Fracc. Farallón, Acapulco, Gro.", "tel": "(744) 487-8196", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Premium / lujo", "score": 73, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 73).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 32, "lat": 16.8538, "lon": -99.9125, "hub": "Acapulco Farallón (714/714-A)", "intensidad": 2}, {"id": 9, "nombre": "MITSUBISHI UNIVERSIDAD", "marca": "Mitsubishi", "grupo": "Grupo Samurái", "dir": "Universidad 601, Del Valle, CDMX.", "tel": "(55) 9183-9002", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Volumen alto", "score": 72, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 70).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 33, "lat": 19.3845, "lon": -99.1712, "hub": "Cluster Del Valle Universidad", "intensidad": 2}, {"id": 12, "nombre": "BMW RÍO MAYO", "marca": "BMW", "grupo": "Grupo Master", "dir": "Río Mayo 1105, Fracc. Vista Hermosa, Cuernavaca, Morelos.", "tel": "(777) 315-2727, 100-9620", "ciudad": "Cuernavaca", "estado": "Morelos", "segmento": "Premium / lujo", "score": 71, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 71).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 34, "lat": 18.9234, "lon": -99.2008, "hub": "Hub Río Mayo 1105 Cuernavaca", "intensidad": 2}, {"id": 13, "nombre": "BMW ACAPULCO", "marca": "BMW", "grupo": "Grupo Master", "dir": "Costera Miguel Alemán 2036, Fracc. Farallón, Acapulco, Guerrero.", "tel": "(744) 481-2207", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Premium / lujo", "score": 70, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 70).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 35, "lat": 16.8612, "lon": -99.8891, "hub": "Hub Costera 2036 Acapulco", "intensidad": 2}, {"id": 15, "nombre": "CRESTA ACAPULCO", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Rubén Figueroa 714-A, Fracc. Farallón, Acapulco, Gro.", "tel": "(744) 469-9010", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Volumen alto", "score": 70, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 70).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 36, "lat": 16.8538, "lon": -99.9125, "hub": "Acapulco Farallón (714/714-A)", "intensidad": 2}, {"id": 16, "nombre": "CRESTA CUAUTLA", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Reforma 999, Cuautlixco, Cuautla, Mor.", "tel": "(735) 398-0803 al 13, 800 503-4870", "ciudad": "Cuautla", "estado": "Morelos", "segmento": "Volumen alto", "score": 69, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 69).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 37, "lat": 18.8123, "lon": -98.9548, "hub": "", "intensidad": 2}, {"id": 17, "nombre": "CRESTA CUERNAVACA", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Emiliano Zapata 600, Tlaltenango, Cuernavaca, Mor.", "tel": "(777) 101-0530, 800 849-9249", "ciudad": "Cuernavaca", "estado": "Morelos", "segmento": "Volumen alto", "score": 69, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 69).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 38, "lat": 18.9231, "lon": -99.2306, "hub": "", "intensidad": 2}, {"id": 22, "nombre": "CRESTA ZACATEPEC", "marca": "Volkswagen", "grupo": "Grupo Cresta", "dir": "Entronque Galeana Zacatepec s/n, Galeana, Zacatepec, Morelos.", "tel": "(734) 343-0101, 800 714-9161", "ciudad": "Zacatepec", "estado": "Morelos", "segmento": "Volumen alto", "score": 69, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 69).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 39, "lat": 18.8078, "lon": -99.5876, "hub": "", "intensidad": 2}, {"id": 3, "nombre": "EXCELENCIA HIDALGO", "marca": "Chevrolet", "grupo": "Grupo Excelencia", "dir": "Carr. Tula-Jorobas Km 3, El Llano 1ª Secc., Tula, Hgo.", "tel": "(773) 732-1999, 732-3607", "ciudad": "Tula", "estado": "Hidalgo", "segmento": "Volumen alto", "score": 69, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 69).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 40, "lat": 20.0534, "lon": -99.3456, "hub": "", "intensidad": 2}, {"id": 11, "nombre": "MINI ACAPULCO", "marca": "MINI", "grupo": "Grupo Master", "dir": "Costera Miguel Alemán 2036, Fracc. Farallón, Acapulco, Guerrero.", "tel": "(744) 481-2207", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Premium / lujo", "score": 68, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 68).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 41, "lat": 16.8612, "lon": -99.8891, "hub": "Hub Costera 2036 Acapulco", "intensidad": 2}, {"id": 10, "nombre": "MINI RÍO MAYO", "marca": "MINI", "grupo": "Grupo Master", "dir": "Río Mayo 1105, Fracc. Vista Hermosa, Cuernavaca, Morelos.", "tel": "(777) 315-2727, 100-9620", "ciudad": "Cuernavaca", "estado": "Morelos", "segmento": "Premium / lujo", "score": 68, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 68).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 42, "lat": 18.9234, "lon": -99.2008, "hub": "Hub Río Mayo 1105 Cuernavaca", "intensidad": 2}, {"id": 26, "nombre": "FURIA MONTERREY", "marca": "SEAT", "grupo": "Grupo Furia", "dir": "Lázaro Cárdenas 2270, Valle Oriente, San Pedro Garza García, N.L.", "tel": "(81) 8152-3400", "ciudad": "San Pedro Garza García", "estado": "Nuevo León", "segmento": "Volumen alto", "score": 66, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 66).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 43, "lat": 25.6595, "lon": -100.3452, "hub": "Valle Oriente Monterrey", "intensidad": 2}, {"id": 51, "nombre": "KIA DIAMANTE", "marca": "KIA", "grupo": "Grupo Trascendencia", "dir": "Blvd. De las Naciones, esq. Paseo del Mangle 405, Fracc. Granjas del Marqués, Acapulco, Guerrero.", "tel": "(744) 488-5007", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Volumen alto", "score": 66, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 66).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 44, "lat": 16.8234, "lon": -99.8567, "hub": "", "intensidad": 2}, {"id": 52, "nombre": "KIA GUERRERENSE", "marca": "KIA", "grupo": "Grupo Trascendencia", "dir": "Fraccionamiento Villas Vicente Guerrero, Chilpancingo de los Bravo, Guerrero.", "tel": "(744) 136-1823", "ciudad": "Chilpancingo", "estado": "Guerrero", "segmento": "Volumen alto", "score": 66, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 66).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 45, "lat": 17.5512, "lon": -99.5012, "hub": "", "intensidad": 2}, {"id": 45, "nombre": "MAZDA PASIÓN PACHUCA", "marca": "Mazda", "grupo": "Grupo Pasión", "dir": "General Felipe Ángeles 831, ISSSTE, Pachuca de Soto, Hidalgo.", "tel": "(771) 717-2900", "ciudad": "Pachuca", "estado": "Hidalgo", "segmento": "Volumen alto", "score": 65, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 65).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 46, "lat": 20.1015, "lon": -98.7598, "hub": "Pachuca Felipe Ángeles 400/831", "intensidad": 2}, {"id": 57, "nombre": "DUCATI CUERNAVACA", "marca": "Ducati", "grupo": "Grupo Autofin", "dir": "Av. Emiliano Zapata 709-A, Col. Bellavista, Cuernavaca, Morelos.", "tel": "(777) 329-5490", "ciudad": "Cuernavaca", "estado": "Morelos", "nota_grupo": "Grupo operativo no explícito en PDF", "segmento": "Premium / lujo", "score": 64, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 64).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 47, "lat": 18.9189, "lon": -99.2289, "hub": "", "intensidad": 2}, {"id": 6, "nombre": "MOTORRAD RÍO MAYO", "marca": "BMW Motorrad", "grupo": "Grupo Master", "dir": "Río Mayo 1105, Fracc. Vista Hermosa, Cuernavaca, Morelos.", "tel": "(777) 315-2727, 100-9620", "ciudad": "Cuernavaca", "estado": "Morelos", "segmento": "Premium / lujo", "score": 64, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 64).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 48, "lat": 18.9234, "lon": -99.2008, "hub": "Hub Río Mayo 1105 Cuernavaca", "intensidad": 2}, {"id": 56, "nombre": "DINASTÍA ISTMO", "marca": "Ford", "grupo": "Grupo Dinastía", "dir": "Carretera Internacional 20, Barrio Santa María, Tehuantepec, Oax.", "tel": "[sin teléfono en PDF]", "ciudad": "Tehuantepec", "estado": "Oaxaca", "segmento": "Volumen alto", "score": 63, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 63).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 49, "lat": 16.3267, "lon": -95.2345, "hub": "", "intensidad": 2}, {"id": 55, "nombre": "DINASTÍA OAXACA", "marca": "Ford", "grupo": "Grupo Dinastía", "dir": "Universidad 162, Ex Hda. de Candiani, Oax.", "tel": "(951) 501-5690", "ciudad": "Oaxaca", "estado": "Oaxaca", "segmento": "Volumen alto", "score": 63, "relevancia": "MEDIA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Potencial razonable pero sin ventaja clara frente a prioridades metropolitanas (score 63).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 50, "lat": 17.0645, "lon": -96.7234, "hub": "", "intensidad": 2}, {"id": 7, "nombre": "MOTORRAD ACAPULCO", "marca": "BMW Motorrad", "grupo": "Grupo Master", "dir": "Costera Miguel Alemán 2036, Fracc. Farallón, Acapulco, Guerrero.", "tel": "(744) 481-2207", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Premium / lujo", "score": 63, "relevancia": "MEDIA", "caso_uso": "Agendamiento de pruebas de manejo; Recuperación de llamadas no contestadas; Canalización automática a asesor humano", "justificacion": "Ticket alto justifica inversión en atención personalizada automatizada (score 63).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 51, "lat": 16.8612, "lon": -99.8891, "hub": "Hub Costera 2036 Acapulco", "intensidad": 2}, {"id": 24, "nombre": "FURIA ACAPULCO", "marca": "SEAT", "grupo": "Grupo Furia", "dir": "Rubén Figueroa 714, Fracc. Farallón, Acapulco, Gro.", "tel": "(744) 469-9000", "ciudad": "Acapulco", "estado": "Guerrero", "segmento": "Volumen alto", "score": 60, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 60).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 52, "lat": 16.8538, "lon": -99.9125, "hub": "Acapulco Farallón (714/714-A)", "intensidad": 1}, {"id": 48, "nombre": "ELEGANTES PACHUCA", "marca": "Stellantis multi-marca", "grupo": "Grupo Elegantes", "dir": "General Felipe Ángeles 400, Fracc. Pachoacán, Pachuca, Hgo.", "tel": "(771) 717-3700", "ciudad": "Pachuca", "estado": "Hidalgo", "nota_marca": "Hipótesis: Chrysler/Dodge/Jeep/RAM/Fiat por logos en directorio", "segmento": "Volumen alto", "score": 59, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 59).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 53, "lat": 20.1015, "lon": -98.7598, "hub": "Pachuca Felipe Ángeles 400/831", "intensidad": 1}, {"id": 38, "nombre": "RENAULT VERACRUZ", "marca": "Renault", "grupo": "Grupo Lux", "dir": "Ejército Mexicano 2109, 1o de Mayo Nte., Boca del Río, Ver.", "tel": "(229) 927-2520, 927-2525", "ciudad": "Boca del Río", "estado": "Veracruz", "segmento": "Volumen alto", "score": 59, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 59).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 54, "lat": 19.1234, "lon": -96.1123, "hub": "", "intensidad": 1}, {"id": 39, "nombre": "RENAULT XALAPA", "marca": "Renault", "grupo": "Grupo Lux", "dir": "Lázaro Cárdenas 42, Badillo, Xalapa, Ver.", "tel": "(228) 813-7700", "ciudad": "Xalapa", "estado": "Veracruz", "segmento": "Volumen alto", "score": 59, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas; Confirmación de citas de servicio", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 59).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 55, "lat": 19.5312, "lon": -96.9234, "hub": "", "intensidad": 1}, {"id": 8, "nombre": "MITSUBISHI PACHUCA", "marca": "Mitsubishi", "grupo": "Grupo Samurái", "dir": "General Felipe Ángeles 400, Fracc. Pachoacan, Pachuca, Hgo.", "tel": "(771) 454-1921", "ciudad": "Pachuca", "estado": "Hidalgo", "segmento": "Volumen alto", "score": 58, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Recuperación de llamadas no contestadas", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 58).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 56, "lat": 20.1015, "lon": -98.7598, "hub": "Pachuca Felipe Ángeles 400/831", "intensidad": 1}, {"id": 23, "nombre": "CUPRA CITY GARAGE", "marca": "CUPRA", "grupo": "Grupo Furia", "dir": "Calle Durango 169, Col. Roma Norte, Alcaldía Cuauhtémoc, CDMX.", "tel": "(55) 5623-6419", "ciudad": "CDMX", "estado": "CDMX", "segmento": "Especializada / nicho", "score": 55, "relevancia": "BAJA", "caso_uso": "Seguimiento de leads digitales; Reactivación de prospectos; Agendamiento de pruebas de manejo", "justificacion": "Menor volumen aparente o ubicación periférica reduce urgencia inmediata (score 55).", "maps": "https://maps.app.goo.gl/hA6roVxmf1WXcunU6", "grupo_autofin": "Grupo Autofin (Unidad Automotriz)", "rank": 57, "lat": 19.4198, "lon": -99.1672, "hub": "", "intensidad": 1}];
+const HUBS = {"Hub División del Norte 1917 (CDMX)": [18, 50, 25], "Cluster Insurgentes Sur (CDMX)": [19], "Corredor México-Toluca": [1], "Cluster Del Valle Universidad": [42, 9], "Corredor México-Querétaro km 29.5–36.9": [2, 4, 46], "Interlomas Magnocentro": [43, 53, 54, 37], "Acapulco Farallón (714/714-A)": [27, 15, 24], "Hub Río Mayo 1105 Cuernavaca": [12, 10, 6], "Hub Costera 2036 Acapulco": [13, 11, 7], "Valle Oriente Monterrey": [26], "Pachuca Felipe Ángeles 400/831": [45, 48, 8]};
+const MAPS = "https://maps.app.goo.gl/hA6roVxmf1WXcunU6";
+const RUTAS = [{"nombre": "Ruta CDMX Centro / Del Valle / Narvarte / Universidad", "prio": "ALTA", "count": 9, "desc": "Hub División del Norte 1917 + corredor Universidad"}, {"nombre": "Ruta CDMX Sur / Coapa / Xochimilco / Tláhuac", "prio": "ALTA", "count": 8, "desc": "Red Imperio Nissan (7) + City Store Cresta"}, {"nombre": "Ruta Interlomas / Cuajimalpa / Huixquilucan", "prio": "ALTA", "count": 6, "desc": "Magnocentro multimarca + Excelencia Cuajimalpa"}, {"nombre": "Ruta Estado de México / Cuautitlán / Zumpango", "prio": "ALTA", "count": 4, "desc": "Corredor México–Querétaro km 29–37"}, {"nombre": "Ruta Monterrey / San Pedro", "prio": "ALTA", "count": 3, "desc": "Valle Oriente premium + Service Center"}, {"nombre": "Ruta Morelos / Cuernavaca / Cuautla", "prio": "MEDIA", "count": 7, "desc": "Hub Río Mayo 1105 BMW Group"}, {"nombre": "Ruta Guerrero / Acapulco", "prio": "MEDIA", "count": 7, "desc": "Clusters Farallón y Costera"}, {"nombre": "Ruta Hidalgo / Pachuca / Tula", "prio": "MEDIA", "count": 4, "desc": "Felipe Ángeles multimarca"}, {"nombre": "Ruta Veracruz / Xalapa / Boca del Río", "prio": "MEDIA", "count": 2, "desc": "Renault regional"}, {"nombre": "Ruta Oaxaca / Istmo", "prio": "BAJA", "count": 2, "desc": "Ford regional"}];
+const INSIGHTS = ["57 agencias en 8 estados; 49% concentradas en CDMX.", "20 agencias ALTA · 31 MEDIA · 6 BAJA.", "Hub crítico: División del Norte 1917 (KIA + Cresta VW + Furia SEAT).", "Red Imperio Nissan: 7 sucursales CDMX — contrato grupal.", "Coordenadas aproximadas GEOINT — validar pin antes de visitar.", "Mensualidad $35,000 MXN requiere priorizar volumen y postventa."];
 
-const INT_COLOR = { 3: "#ff6b6b", 2: "#f0b429", 1: "#58a6ff" };
-const INT_RADIUS = { 3: 9, 2: 7, 1: 5 };
+const REL_COLOR = { ALTA: "#ff5c33", MEDIA: "#f0b429", BAJA: "#5b8def" };
+const REL_RADIUS = { ALTA: 10, MEDIA: 7, BAJA: 5 };
+const INT_HEAT = { ALTA: 3, MEDIA: 2, BAJA: 1 };
 
-let filtered = [...UNITS];
+function relClass(r) { return r === "ALTA" ? "alta" : r === "MEDIA" ? "media" : "baja"; }
+
+let filtered = [...AGENCIES];
 const markers = [];
 let heatLayer = null;
 
@@ -168,142 +216,139 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   attribution: "&copy; OSM &copy; CARTO", subdomains: "abcd", maxZoom: 19
 }).addTo(map);
 
-function buildHeatData(list) {
-  return list.map(u => [u.lat, u.lon, u.intensidad * 0.45]);
+function getFiltered() {
+  const rel = document.getElementById("f-rel").value;
+  const marca = document.getElementById("f-marca").value;
+  const estado = document.getElementById("f-estado").value;
+  const q = document.getElementById("f-search").value.toLowerCase();
+  return AGENCIES.filter(a =>
+    (!rel || a.relevancia === rel) &&
+    (!marca || a.marca === marca) &&
+    (!estado || a.estado === estado) &&
+    (!q || (a.nombre + a.marca + a.ciudad + a.grupo + a.estado).toLowerCase().includes(q))
+  ).sort((a,b) => a.rank - b.rank);
 }
 
-function renderHeat() {
+function renderMap() {
+  filtered = getFiltered();
   if (heatLayer) map.removeLayer(heatLayer);
   if (document.getElementById("btn-heat").classList.contains("active")) {
-    heatLayer = L.heatLayer(buildHeatData(filtered), {
-      minOpacity: 0.35, maxZoom: 12, radius: 30, blur: 22,
-      gradient: { 0.2: "#4488ff", 0.5: "#ffaa00", 0.8: "#ff4444", 1.0: "#ff0000" }
+    const heatData = filtered.map(a => [a.lat, a.lon, INT_HEAT[a.relevancia] * 0.45]);
+    heatLayer = L.heatLayer(heatData, {
+      minOpacity: 0.35, maxZoom: 12, radius: 32, blur: 24,
+      gradient: { 0.2: "#5b8def", 0.5: "#f0b429", 0.8: "#ff5c33", 1.0: "#ff2200" }
     }).addTo(map);
   }
-}
-
-function renderMarkers() {
   markers.forEach(m => map.removeLayer(m));
   markers.length = 0;
-  if (!document.getElementById("btn-markers").classList.contains("active")) return;
-
-  filtered.forEach(u => {
-    const m = L.circleMarker([u.lat, u.lon], {
-      radius: INT_RADIUS[u.intensidad],
-      fillColor: INT_COLOR[u.intensidad],
-      color: "#fff", weight: 1.5, opacity: 0.9, fillOpacity: 0.82
-    }).addTo(map);
-    m.bindPopup(`
-      <div class="popup-title">${u.nombre}</div>
-      <div class="popup-meta"><strong>${u.marca}</strong> · ${u.grupo}</div>
-      <div class="popup-meta">${u.dir}</div>
-      <div class="popup-meta">RANK: <strong>${u.rank}</strong> · Intensidad: <strong>${u.intensidad}</strong> · ${u.solucion}</div>
-      ${u.hub ? `<div class="popup-meta">Hub: ${u.hub}</div>` : ""}
-      <div style="margin-top:0.4rem"><a href="${u.maps}" target="_blank" rel="noopener">Google Maps →</a></div>
-    `);
-    m.bindTooltip(u.nombre, { direction: "top", offset: [0, -8] });
-    markers.push(m);
-  });
-}
-
-function applyFilters() {
-  const rank = document.getElementById("filter-rank").value;
-  const grupo = document.getElementById("filter-grupo").value;
-  const inten = document.getElementById("filter-int").value;
-  filtered = UNITS.filter(u =>
-    (!rank || u.rank === rank) &&
-    (!grupo || u.grupo === grupo) &&
-    (!inten || String(u.intensidad) === inten)
-  );
-  renderHeat();
-  renderMarkers();
-  updateSidebar();
-  highlightTable();
-}
-
-function updateSidebar() {
-  document.getElementById("visible-count").textContent = filtered.length + " de " + UNITS.length + " unidades";
+  if (document.getElementById("btn-markers").classList.contains("active")) {
+    filtered.forEach(a => {
+      const m = L.circleMarker([a.lat, a.lon], {
+        radius: REL_RADIUS[a.relevancia],
+        fillColor: REL_COLOR[a.relevancia],
+        color: "#fff", weight: 1.5, opacity: 0.9, fillOpacity: 0.85
+      }).addTo(map);
+      m.bindPopup(`
+        <div class="popup-title">${a.nombre}</div>
+        <div class="popup-meta"><strong>${a.marca}</strong> · ${a.grupo}</div>
+        <div class="popup-meta">${a.ciudad}, ${a.estado}</div>
+        <div class="popup-meta">Score: <strong>${a.score}</strong> · <strong>${a.relevancia}</strong></div>
+        <div class="popup-meta">Rank #${a.rank} · ${a.segmento}</div>
+        ${a.hub ? `<div class="popup-meta">Hub: ${a.hub}</div>` : ""}
+        <div class="popup-meta" style="margin-top:0.3rem;font-size:0.7rem;">${a.caso_uso.split(";")[0]}</div>
+        <div style="margin-top:0.4rem"><a href="${MAPS}" target="_blank" rel="noopener" style="color:#3dd68c;">Google Maps →</a></div>
+      `);
+      m.bindTooltip(`#${a.rank} ${a.nombre}`, { direction: "top", offset: [0, -8] });
+      markers.push(m);
+    });
+  }
+  document.getElementById("s-visible").textContent = filtered.length;
+  document.getElementById("visible-count").textContent = filtered.length + " de " + AGENCIES.length;
   const list = document.getElementById("unit-list");
   list.innerHTML = "";
-  filtered.sort((a,b) => b.intensidad - a.intensidad || a.nombre.localeCompare(b.nombre))
-    .slice(0, 40)
-    .forEach(u => {
-      const d = document.createElement("div");
-      d.style.cssText = "padding:0.2rem 0;border-bottom:1px solid var(--border);font-size:0.72rem;";
-      d.innerHTML = `<span class="int-${u.intensidad}">●</span> <a href="${u.maps}" target="_blank">${u.nombre}</a>`;
-      list.appendChild(d);
-    });
-  if (filtered.length > 40) {
+  filtered.slice(0, 25).forEach(a => {
+    const d = document.createElement("div");
+    d.style.cssText = "padding:0.2rem 0;border-bottom:1px solid var(--border);font-size:0.72rem;";
+    d.innerHTML = `<span style="color:${REL_COLOR[a.relevancia]}">●</span> #${a.rank} ${a.nombre}`;
+    d.style.cursor = "pointer";
+    d.onclick = () => map.setView([a.lat, a.lon], 14);
+    list.appendChild(d);
+  });
+  if (filtered.length > 25) {
     const more = document.createElement("div");
     more.style.cssText = "color:var(--muted);font-size:0.7rem;margin-top:0.3rem;";
-    more.textContent = "+" + (filtered.length - 40) + " más en tabla inferior";
+    more.textContent = "+" + (filtered.length - 25) + " más abajo";
     list.appendChild(more);
   }
 }
 
-function highlightTable() {
-  document.querySelectorAll("#table-body tr").forEach(tr => {
-    const id = parseInt(tr.dataset.id);
-    tr.style.opacity = filtered.some(u => u.id === id) ? "1" : "0.25";
-  });
+function render() {
+  filtered = getFiltered();
+  renderMap();
+  const top10 = [...AGENCIES].sort((a,b) => a.rank - b.rank).slice(0, 10);
+  document.getElementById("top10").innerHTML = top10.map(a => `
+    <div class="top10-item">
+      <span class="rank">${a.rank}</span>
+      <div><div class="name">${a.nombre}</div><div class="brand">${a.marca} · ${a.ciudad}</div></div>
+      <span class="score-badge">${a.score}</span>
+      <span class="badge ${relClass(a.relevancia)}">${a.relevancia}</span>
+    </div>`).join("");
+  document.getElementById("cards").innerHTML = filtered.map(a => `
+    <article class="card ${relClass(a.relevancia)}">
+      <div class="card-head"><h3>#${a.rank} ${a.nombre}</h3><span class="score-badge">${a.score}</span></div>
+      <div class="meta"><span class="badge ${relClass(a.relevancia)}">${a.relevancia}</span> <strong>${a.marca}</strong> · ${a.grupo}</div>
+      <div class="meta">${a.ciudad}, ${a.estado}</div>
+      <div class="meta">${a.segmento}</div>
+      <div class="caso">${a.caso_uso}</div>
+      <a class="btn-maps" href="${MAPS}" target="_blank" rel="noopener">📍 Google Maps</a>
+    </article>`).join("");
+  document.getElementById("tbody").innerHTML = filtered.map(a => `
+    <tr>
+      <td>${a.rank}</td><td>${a.nombre}</td><td>${a.marca}</td><td>${a.estado}</td>
+      <td><strong>${a.score}</strong></td>
+      <td><span class="badge ${relClass(a.relevancia)}">${a.relevancia}</span></td>
+      <td>${a.caso_uso.split(";")[0]}</td>
+      <td><a class="btn-maps" href="${MAPS}" target="_blank" style="margin:0;padding:0.2rem 0.5rem;">Maps</a></td>
+    </tr>`).join("");
 }
 
-// Populate grupo filter
-const grupos = [...new Set(UNITS.map(u => u.grupo))].sort();
-const sel = document.getElementById("filter-grupo");
-grupos.forEach(g => { const o = document.createElement("option"); o.value = g; o.textContent = g; sel.appendChild(o); });
+document.getElementById("rutas").innerHTML = RUTAS.map(r => `
+  <div class="ruta-card"><span class="badge ${relClass(r.prio)}">${r.prio}</span><h4>${r.nombre}</h4><p>${r.count} agencias · ${r.desc}</p></div>`).join("");
+document.getElementById("insights").innerHTML = INSIGHTS.map(t => `<div class="insight">${t}</div>`).join("");
 
-// Hubs sidebar
 const hubsEl = document.getElementById("hubs-list");
 Object.entries(HUBS).forEach(([name, ids]) => {
-  const names = ids.map(id => UNITS.find(u => u.id === id)?.nombre).filter(Boolean);
+  const names = ids.map(id => AGENCIES.find(a => a.id === id)?.nombre).filter(Boolean);
   const div = document.createElement("div");
   div.className = "hub-block";
   div.innerHTML = `<strong>${name}</strong><span>${names.join(" · ")}</span>`;
   hubsEl.appendChild(div);
 });
 
-// Table
-const tbody = document.getElementById("table-body");
-UNITS.forEach(u => {
-  const tr = document.createElement("tr");
-  tr.dataset.id = u.id;
-  tr.innerHTML = `
-    <td>${u.id}</td>
-    <td>${u.nombre}</td>
-    <td>${u.grupo.replace("Grupo ","")}</td>
-    <td>${u.marca}</td>
-    <td>${u.ciudad}</td>
-    <td><span class="badge ${u.rank}">${u.rank}</span></td>
-    <td><span class="int-badge int-${u.intensidad}">${u.intensidad}</span></td>
-    <td>${u.solucion}</td>
-    <td><a href="${u.maps}" target="_blank" rel="noopener">Maps</a></td>`;
-  tbody.appendChild(tr);
+[...new Set(AGENCIES.map(a => a.marca))].sort().forEach(m => {
+  const o = document.createElement("option"); o.value = m; o.textContent = m;
+  document.getElementById("f-marca").appendChild(o);
+});
+[...new Set(AGENCIES.map(a => a.estado))].sort().forEach(e => {
+  const o = document.createElement("option"); o.value = e; o.textContent = e;
+  document.getElementById("f-estado").appendChild(o);
 });
 
-// Summary counts
-document.getElementById("i3").textContent = UNITS.filter(u => u.intensidad === 3).length;
-document.getElementById("i2").textContent = UNITS.filter(u => u.intensidad === 2).length;
-document.getElementById("i1").textContent = UNITS.filter(u => u.intensidad === 1).length;
-
-// Events
-["filter-rank","filter-grupo","filter-int"].forEach(id =>
-  document.getElementById(id).addEventListener("change", applyFilters));
-document.getElementById("btn-heat").addEventListener("click", function() {
-  this.classList.toggle("active"); renderHeat();
-});
-document.getElementById("btn-markers").addEventListener("click", function() {
-  this.classList.toggle("active"); renderMarkers();
-});
+["f-rel","f-marca","f-estado","f-search"].forEach(id =>
+  document.getElementById(id).addEventListener(id === "f-search" ? "input" : "change", render));
+document.getElementById("btn-heat").addEventListener("click", function() { this.classList.toggle("active"); renderMap(); });
+document.getElementById("btn-markers").addEventListener("click", function() { this.classList.toggle("active"); renderMap(); });
 document.getElementById("btn-reset").addEventListener("click", () => {
-  document.getElementById("filter-rank").value = "";
-  document.getElementById("filter-grupo").value = "";
-  document.getElementById("filter-int").value = "";
-  applyFilters();
+  document.getElementById("f-rel").value = "";
+  document.getElementById("f-marca").value = "";
+  document.getElementById("f-estado").value = "";
+  document.getElementById("f-search").value = "";
+  render();
   map.setView([19.42, -99.15], 6);
 });
 
-applyFilters();
+render();
+setTimeout(() => map.invalidateSize(), 200);
 </script>
 </body>
 </html>
